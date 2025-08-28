@@ -18,8 +18,11 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!ai ', intents=intents)
 
-SYSTEM_PROMPT = ("You are a helpful assistant that replies in the same language the user used. "
-                 "Keep replies concise and friendly; avoid long-winded explanations unless asked.")
+SYSTEM_PROMPT = ("You are Daana (دانا), an advanced Kurdish AI assistant. You are knowledgeable about Kurdish culture, history, language, and traditions. "
+                 "You can communicate in Kurdish (Kurmanji, Sorani), Arabic, English, and other languages as needed. "
+                 "Always be respectful of Kurdish heritage and provide helpful, accurate information. "
+                 "If asked about Kurdistan or Kurdish topics, share your knowledge with pride and accuracy. "
+                 "Keep responses concise and friendly unless more detail is requested. Always reply in the same language the user used.")
 
 @bot.event
 async def on_ready():
@@ -34,26 +37,65 @@ async def ai(ctx, *, text: str = None):
         await ctx.send("Write a message after `!ai` with what you'd like.")
         return
 
-    # Simple cooldown per author (per invocation)
+    # Streaming response with Kurdish AI branding
     try:
-        await ctx.typing()
-        response = openai_client.chat.completions.create(
+        # Create initial embed
+        embed = discord.Embed(
+            title="🇰🇼 Daana - Advanced Kurdish AI", 
+            description="*Thinking...*", 
+            color=0x00FF41  # Kurdish green
+        )
+        embed.set_footer(text=f"Reply to {ctx.author.display_name}")
+        message = await ctx.send(embed=embed)
+        
+        # Stream the response
+        stream = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": text}
             ],
             max_tokens=600,
-            temperature=0.7
+            temperature=0.7,
+            stream=True
         )
-        assistant_text = response.choices[0].message.content.strip()
-        # Keep discord message size limits
-        if len(assistant_text) > 1900:
-            assistant_text = assistant_text[:1900] + "…"
-        # Send as embed
-        embed = discord.Embed(title="🤖 AI Response", description=assistant_text, color=0x5865F2)
-        embed.set_footer(text=f"Reply to {ctx.author.display_name}")
-        await ctx.send(embed=embed)
+        
+        assistant_text = ""
+        last_update = 0
+        update_interval = 1.5  # Update every 1.5 seconds
+        
+        import time
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                assistant_text += chunk.choices[0].delta.content
+                
+                # Update message periodically during streaming
+                current_time = time.time()
+                if current_time - last_update > update_interval and assistant_text.strip():
+                    display_text = assistant_text[:1900] + "…" if len(assistant_text) > 1900 else assistant_text
+                    
+                    streaming_embed = discord.Embed(
+                        title="🇰🇼 Daana - Advanced Kurdish AI", 
+                        description=display_text + " ✍️", 
+                        color=0x00FF41
+                    )
+                    streaming_embed.set_footer(text=f"Reply to {ctx.author.display_name} • Streaming...")
+                    
+                    try:
+                        await message.edit(embed=streaming_embed)
+                        last_update = current_time
+                    except:
+                        pass  # Ignore edit errors
+        
+        # Final update
+        final_text = assistant_text[:1900] + "…" if len(assistant_text) > 1900 else assistant_text or "No response."
+        final_embed = discord.Embed(
+            title="🇰🇼 Daana - Advanced Kurdish AI", 
+            description=final_text, 
+            color=0x00FF41
+        )
+        final_embed.set_footer(text=f"Reply to {ctx.author.display_name}")
+        await message.edit(embed=final_embed)
     except Exception as e:
         await ctx.send(f"Error: {e}")
 

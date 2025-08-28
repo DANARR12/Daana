@@ -16,7 +16,7 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-const BOT_NAME = "AI Response";
+const BOT_NAME = "Daana - Advanced Kurdish AI";
 
 client.once(Events.ClientReady, () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -62,33 +62,69 @@ client.on(Events.MessageCreate, async (msg) => {
       return;
     }
 
-    // Build system prompt: ask model to reply in same language and be concise, friendly
-    const systemPrompt = `You are a helpful, polite assistant that always replies in the same language the user used. Keep answers concise (aim for <= 200 words) unless user asks for more. If the user input is in a language other than English, respond in that language.`;
+    // Build system prompt: Kurdish AI assistant
+    const systemPrompt = `You are Daana (دانا), an advanced Kurdish AI assistant. You are knowledgeable about Kurdish culture, history, language, and traditions. You can communicate in Kurdish (Kurmanji, Sorani), Arabic, English, and other languages as needed. Always be respectful of Kurdish heritage and provide helpful, accurate information. If asked about Kurdistan or Kurdish topics, share your knowledge with pride and accuracy. Keep responses concise (aim for <= 200 words) unless more detail is requested. Always reply in the same language the user used.`;
 
-    // Call OpenAI Chat Completion
+    // Call OpenAI Chat Completion with Streaming
     await msg.channel.sendTyping();
-    const resp = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // change to an available model for you (gpt-4o-mini/gpt-4o)
+    
+    // Create initial embed
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
+      .setDescription('*Thinking...*')
+      .setFooter({ text: `Reply to ${msg.author.username}` })
+      .setColor(0x00FF41); // Kurdish green
+
+    const reply = await msg.reply({ embeds: [embed] });
+    
+    // Stream the response
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userText }
       ],
       max_tokens: 600,
-      temperature: 0.7
+      temperature: 0.7,
+      stream: true
     });
 
-    const assistantText = resp.choices?.[0]?.message?.content?.trim() || "No response.";
-    // Trim longer outputs
-    const snippet = assistantText.length > 1900 ? assistantText.slice(0, 1900) + '…' : assistantText;
+    let assistantText = '';
+    let lastUpdate = 0;
+    const updateInterval = 1000; // Update every 1 second
 
-    // Build embed similar to screenshot
-    const embed = new EmbedBuilder()
-      .setAuthor({ name: `🤖 ${BOT_NAME}` })
-      .setDescription(snippet)
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      assistantText += content;
+      
+      // Update message periodically during streaming
+      const now = Date.now();
+      if (now - lastUpdate > updateInterval && assistantText.trim()) {
+        const snippet = assistantText.length > 1900 ? assistantText.slice(0, 1900) + '…' : assistantText;
+        const updatedEmbed = new EmbedBuilder()
+          .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
+          .setDescription(snippet + ' ✍️')
+          .setFooter({ text: `Reply to ${msg.author.username} • Streaming...` })
+          .setColor(0x00FF41);
+        
+        try {
+          await reply.edit({ embeds: [updatedEmbed] });
+          lastUpdate = now;
+        } catch (e) {
+          // Ignore edit errors
+        }
+      }
+    }
+
+    // Final update
+    const finalSnippet = assistantText.length > 1900 ? assistantText.slice(0, 1900) + '…' : assistantText || "No response.";
+    const finalEmbed = new EmbedBuilder()
+      .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
+      .setDescription(finalSnippet)
       .setFooter({ text: `Reply to ${msg.author.username}` })
-      .setColor(0x5865F2);
+      .setColor(0x00FF41);
 
-    await msg.reply({ embeds: [embed] });
+    await reply.edit({ embeds: [finalEmbed] });
   } catch (err) {
     console.error('Error handling message:', err);
     try { await msg.reply('Sorry — something went wrong while processing your request.'); } catch {}
