@@ -1,0 +1,24 @@
+{
+  "name": "daana",
+  "version": "1.0.0",
+  "description": "Discord AI bot with OpenAI integration",
+  "main": "ai_bot.js",
+  "scripts": {
+    "start": "node ai_bot.js",
+    "dev": "nodemon ai_bot.js"
+  },
+  "keywords": ["discord", "bot", "ai", "openai", "chatgpt"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "openai": "^4.24.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
