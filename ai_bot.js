@@ -34,10 +34,12 @@ client.on(Events.MessageCreate, async (msg) => {
     // Example triggers:
     // 1) direct mention -> reply
     // 2) prefix: "!ai " -> reply
+    // 3) prefix: "!translate " -> translation
     const mentioned = msg.mentions.has(client.user);
     const prefixMatch = msg.content.trim().startsWith('!ai ');
+    const translateMatch = msg.content.trim().startsWith('!translate ');
 
-    if (!mentioned && !prefixMatch) return;
+    if (!mentioned && !prefixMatch && !translateMatch) return;
 
     // cooldown
     const now = Date.now();
@@ -50,33 +52,54 @@ client.on(Events.MessageCreate, async (msg) => {
 
     // extract user text
     let userText = msg.content;
+    let isTranslation = false;
+    
     if (mentioned) {
       // remove mention from content
       const mentionRegex = new RegExp(`<@!?${client.user.id}>`, 'g');
       userText = userText.replace(mentionRegex, '').trim();
+    } else if (translateMatch) {
+      userText = userText.slice(11).trim(); // after "!translate "
+      isTranslation = true;
     } else {
       userText = userText.slice(4).trim(); // after "!ai "
     }
+    
     if (!userText) {
-      await msg.reply('Send a message after the mention or `!ai` with what you want me to do.');
+      const helpText = isTranslation ? 
+        'Send text to translate after `!translate`. Example: `!translate to English: سڵاو چۆنی؟`' :
+        'Send a message after the mention or `!ai` with what you want me to do.';
+      await msg.reply(helpText);
       return;
     }
 
-    // Build system prompt: multilingual assistant with Kurdish support
-    const systemPrompt = `You are a helpful, polite assistant. 
+    // Build system prompt based on request type
+    let systemPrompt;
+    if (isTranslation) {
+      systemPrompt = `You are a professional translator. 
+Translate the given text accurately while preserving meaning and context.
+You excel at translating Kurdish (Sorani, Badini), Arabic, English, Persian, Turkish, and other languages.
+Always specify the detected source language and target language.
+Provide only the translation unless asked for explanation.`;
+    } else {
+      systemPrompt = `You are a helpful, polite assistant and translator. 
 Always detect the user's language and reply in that language. 
 You must fully support Kurdish (Sorani, Badini) and answer naturally in it. 
+You can translate between any languages including Kurdish, Arabic, English, Persian, Turkish, and others.
+If asked to translate, provide accurate translations and specify the source and target languages.
 Keep replies concise unless the user asks for more detail.`;
+    }
 
     // Call OpenAI Chat Completion with Streaming
     await msg.channel.sendTyping();
     
     // Create initial embed
+    const embedTitle = isTranslation ? `🌐 ${BOT_NAME} - Translator` : `🇰🇼 ${BOT_NAME}`;
     const embed = new EmbedBuilder()
-      .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
-      .setDescription('*Thinking...*')
+      .setAuthor({ name: embedTitle })
+      .setDescription(isTranslation ? '*Translating...*' : '*Thinking...*')
       .setFooter({ text: `Reply to ${msg.author.username}` })
-      .setColor(0x00FF41); // Kurdish green
+      .setColor(isTranslation ? 0x4A90E2 : 0x00FF41); // Blue for translation, Kurdish green for general
 
     const reply = await msg.reply({ embeds: [embed] });
     
@@ -105,10 +128,10 @@ Keep replies concise unless the user asks for more detail.`;
       if (now - lastUpdate > updateInterval && assistantText.trim()) {
         const snippet = assistantText.length > 1900 ? assistantText.slice(0, 1900) + '…' : assistantText;
         const updatedEmbed = new EmbedBuilder()
-          .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
+          .setAuthor({ name: embedTitle })
           .setDescription(snippet + ' ✍️')
-          .setFooter({ text: `Reply to ${msg.author.username} • Streaming...` })
-          .setColor(0x00FF41);
+          .setFooter({ text: `Reply to ${msg.author.username} • ${isTranslation ? 'Translating...' : 'Streaming...'}` })
+          .setColor(isTranslation ? 0x4A90E2 : 0x00FF41);
         
         try {
           await reply.edit({ embeds: [updatedEmbed] });
@@ -122,10 +145,10 @@ Keep replies concise unless the user asks for more detail.`;
     // Final update
     const finalSnippet = assistantText.length > 1900 ? assistantText.slice(0, 1900) + '…' : assistantText || "No response.";
     const finalEmbed = new EmbedBuilder()
-      .setAuthor({ name: `🇰🇼 ${BOT_NAME}` })
+      .setAuthor({ name: embedTitle })
       .setDescription(finalSnippet)
       .setFooter({ text: `Reply to ${msg.author.username}` })
-      .setColor(0x00FF41);
+      .setColor(isTranslation ? 0x4A90E2 : 0x00FF41);
 
     await reply.edit({ embeds: [finalEmbed] });
   } catch (err) {
