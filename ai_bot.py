@@ -18,8 +18,12 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!ai ', intents=intents)
 
-SYSTEM_PROMPT = ("You are a helpful assistant that replies in the same language the user used. "
-                 "Keep replies concise and friendly; avoid long-winded explanations unless asked.")
+SYSTEM_PROMPT = (
+    "You are a helpful assistant. "
+    "Always detect the user's language and reply in that language. "
+    "You must fully support Kurdish (Sorani, Kurmanji, Badini) and answer naturally in it. "
+    "Keep replies concise and friendly unless the user asks for more detail."
+)
 
 @bot.event
 async def on_ready():
