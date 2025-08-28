@@ -21,7 +21,7 @@ bot = commands.Bot(command_prefix='!ai ', intents=intents)
 SYSTEM_PROMPT = (
     "You are a helpful assistant. "
     "Always detect the user's language and reply in that language. "
-    "You must fully support Kurdish (Sorani, Kurmanji, Badini) and answer naturally in it. "
+    "You must fully support Kurdish (Sorani, Badini) and answer naturally in it. "
     "Keep replies concise and friendly unless the user asks for more detail."
 )
 

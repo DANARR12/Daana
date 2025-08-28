@@ -65,7 +65,7 @@ client.on(Events.MessageCreate, async (msg) => {
     // Build system prompt: multilingual assistant with Kurdish support
     const systemPrompt = `You are a helpful, polite assistant. 
 Always detect the user's language and reply in that language. 
-You must fully support Kurdish (Sorani, Kurmanji, Badini) and answer naturally in it. 
+You must fully support Kurdish (Sorani, Badini) and answer naturally in it. 
 Keep replies concise unless the user asks for more detail.`;
 
     // Call OpenAI Chat Completion with Streaming
