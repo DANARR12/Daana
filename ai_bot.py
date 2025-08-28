@@ -18,11 +18,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!ai ', intents=intents)
 
-SYSTEM_PROMPT = ("You are Daana (دانا), an advanced Kurdish AI assistant. You are knowledgeable about Kurdish culture, history, language, and traditions. "
-                 "You can communicate in Kurdish (Kurmanji, Sorani), Arabic, English, and other languages as needed. "
-                 "Always be respectful of Kurdish heritage and provide helpful, accurate information. "
-                 "If asked about Kurdistan or Kurdish topics, share your knowledge with pride and accuracy. "
-                 "Keep responses concise and friendly unless more detail is requested. Always reply in the same language the user used.")
+SYSTEM_PROMPT = ("You are a helpful, polite assistant that always replies in the same language the user used. "
+                 "Keep answers concise (aim for <= 200 words) unless user asks for more. If the user input is in a language other than English, respond in that language.")
 
 @bot.event
 async def on_ready():
