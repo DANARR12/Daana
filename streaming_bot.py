@@ -19,7 +19,7 @@ async def on_ready():
     # Streaming presence
     activity = discord.Streaming(
         name="Advanced Kurdish AI",   # status text
-        url="https://twitch.tv/daana_ai"  # required for streaming status
+        url=""  # required for streaming status
     )
     
     await bot.change_presence(status=discord.Status.online, activity=activity)
