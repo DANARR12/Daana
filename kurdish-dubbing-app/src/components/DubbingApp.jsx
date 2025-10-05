@@ -12,10 +12,9 @@ import {
   Keyboard,
   FileUp,
   FileText,
-  Waveform,
+  Music2,
   Sparkles,
   AlertCircle,
-  Settings,
   Trash2,
   Plus,
   ChevronRight,
@@ -929,7 +928,7 @@ export default function DubbingApp() {
             {/* Audio tracks */}
             <div>
               <div className="flex items-center gap-2 text-white/90 mb-2">
-                <Waveform className="w-5 h-5" />
+                <Music2 className="w-5 h-5" />
                 <span>دەنگەکان (Audio tracks)</span>
               </div>
               <div className="space-y-2 max-h-48 overflow-auto">
